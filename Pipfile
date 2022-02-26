@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 pypdf2 = "*"
+opencv-python = "*"
+pytesseract = "*"
+textract = "*"
+pdf2image = "*"
 
 [dev-packages]
 
