@@ -2,23 +2,68 @@ import PyPDF2 as pdf
 import os
 import glob
 import datetime
+import re
 from dataclasses import dataclass
 
 
-path = r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\Input"
-files = glob.glob(path)
+# path = r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\Input"
+# files = glob.glob(path)
 
-for file in files:
-    pdf_reader = pdf.PdfFileReader(file)
+# for file in files:
+#     pdf_reader = pdf.PdfFileReader(file)
+
+class Data_extracter:
+    
+    def __init__(self, path):
+        self.path = path
+        self.name = None
+        self.date = None
+        self.items = None
+        self.data = None
+
+    def txt_inputfile(self):
+        with open(self.path, 'r') as file:
+            self.data = file.readlines()
+        return
+
+    def extract_data(self):
+        """Method to combine all data gathering routines."""
+        self.name = self.extract_name()
+        self.date = self.extract_date()
+
+    def extract_date(self):
+        """Extract the date from the inputdata."""
+        for line in self.data:
+            temp = re.compile(r"\d\d.\d\d.\d\d\d\d").search(line)
+            if temp != None:
+                return datetime.datetime(year=int(temp[0][6:]),
+                                         month=int(temp[0][3:5]), 
+                                         day=int(temp[0][0:2]))
+
+    def extract_name(self):
+        """Extract the name of the job from the inputdata."""
+        with open(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\shops.txt", 'r') as shopfile:
+            shoplist = shopfile.readlines()
+            for shop in shoplist:
+                for line in self.data:
+                    if (line.find(shop) != -1):
+                        return shop
+
+    def extract_items(self, data):
+        """Extract the itmes and the corresponding prices."""
+        pass
+
 
 @dataclass
-class receipt:
+class Receipt:
+
     name: str
     date: datetime.datetime
     items: list
 
+    
 @dataclass
-class item:
+class Item:
     name: str
     full_name: str
     prize: float
