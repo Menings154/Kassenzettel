@@ -1,3 +1,4 @@
+from gzip import READ
 import PyPDF2 as pdf
 import os
 import glob
@@ -18,7 +19,7 @@ class Data_extracter:
         self.path = path
         self.name = None
         self.date = None
-        self.items = None
+        self.items = list()
         self.data = None
 
     def txt_inputfile(self):
@@ -30,11 +31,14 @@ class Data_extracter:
         """Method to combine all data gathering routines."""
         self.name = self.extract_name()
         self.date = self.extract_date()
+        self.items = self.extract_items()
+        return Receipt(name=self.name, date=self.date, items=self.items)
 
     def extract_date(self):
         """Extract the date from the inputdata."""
+        date_re = re.compile(r"\d\d.\d\d.\d\d\d\d")
         for line in self.data:
-            temp = re.compile(r"\d\d.\d\d.\d\d\d\d").search(line)
+            temp = date_re.search(line)
             if temp != None:
                 return datetime.datetime(year=int(temp[0][6:]),
                                          month=int(temp[0][3:5]), 
@@ -49,9 +53,21 @@ class Data_extracter:
                     if (line.find(shop) != -1):
                         return shop
 
-    def extract_items(self, data):
+    def extract_items(self):
         """Extract the itmes and the corresponding prices."""
-        pass
+        item_list=[]
+        price_re = re.compile(r"\d+,\d\d")
+        with open(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt", 'r') as goodsfile:
+            goods = goodsfile.readlines()
+            for good in goods:
+                for line in self.data:
+                    if (line.find(good) != -1):
+                        item_list.append(
+                            Item(name=good,
+                                 prize=float(price_re.search(line)[0].replace(',', '.'))
+                                 )
+                            )
+        return item_list
 
 
 @dataclass
@@ -64,6 +80,7 @@ class Receipt:
     
 @dataclass
 class Item:
+
     name: str
-    full_name: str
+    # full_name: str
     prize: float
