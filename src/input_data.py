@@ -32,6 +32,9 @@ class Data_extracter:
         self.name = self.extract_name()
         self.date = self.extract_date()
         self.items = self.extract_items()
+        # das könnte eine gute anwendung für decorators sein
+        self.cleanup_lookup(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\shops.txt")
+        self.cleanup_lookup(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt")
         return Receipt(name=self.name, date=self.date, items=self.items)
 
     def extract_date(self):
@@ -52,6 +55,10 @@ class Data_extracter:
                 for line in self.data:
                     if (line.find(shop) != -1):
                         return shop
+            
+            answer = self.ask_input(text=self.data, problem='Which shop is this from? : ')
+            self.add_lookup(data=answer.upper(), path=r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\shops.txt")
+            return answer
 
     def extract_items(self):
         """Extract the itmes and the corresponding prices."""
@@ -59,15 +66,48 @@ class Data_extracter:
         price_re = re.compile(r"\d+,\d\d")
         with open(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt", 'r') as goodsfile:
             goods = goodsfile.readlines()
-            for good in goods:
-                for line in self.data:
-                    if (line.find(good) != -1):
-                        item_list.append(
-                            Item(name=good,
-                                 prize=float(price_re.search(line)[0].replace(',', '.'))
-                                 )
+            for line in self.data:
+                prc = price_re.search(line) 
+                if prc != None:
+                    for good in goods:
+                        if (line.find(good) != -1):
+                            item_list.append(
+                                Item(name=good,
+                                    prize=float(prc[0].replace(',', '.'))
+                                )
                             )
+                            break
+                    
+                    product = self.ask_input(text=line, problem='What product is that? : ')  # kann ich das über dekorator lösen?
+                    self.add_lookup(data=product.upper(), path=r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt")
+        
         return item_list
+
+    def ask_input(self, text, problem):
+        """Ask the user for Input."""
+        print('-------------------------------------------------------------------')
+        print(text)
+        return input(problem)
+    
+    def add_lookup(self, data, path):
+        """Append the data to the lookup file."""
+        with open(path, 'a') as file:
+            file.write('\n')
+            file.write(data)
+            file.close()
+
+    def cleanup_lookup(self, path):
+        with open(path, 'r') as file:
+            content = file.readlines()
+            content = list(set(content))
+            content.remove('\n')
+            
+        word = ""
+        for good in content:
+            word += good
+        
+        with open(path, 'w') as file:
+            file.write(word)
 
 
 @dataclass
