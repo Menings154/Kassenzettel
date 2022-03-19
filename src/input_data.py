@@ -73,23 +73,49 @@ class Data_extracter:
             with open(file, 'r') as pkl:
                 goods.append(pkl)
 
-        with open(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt", 'r') as goodsfile:
-            goods = goodsfile.readlines()
-            for line in self.data:
-                prc = price_re.search(line) 
-                if prc != None:
-                    for good in goods:
-                        if (line.find(good) != -1):
+        for line in self.data:
+            prc = price_re.search(line) 
+            if prc != None:
+                state = 0
+                for good in goods:
+                    if state == 1:
+                        break
+                    for alt_name in good.alt_names:
+                        if (line.find(alt_name) != -1):
                             item_list.append(
-                                Item(name=good,
+                                Item(name=good.name,
                                     prize=float(prc[0].replace(',', '.'))
                                 )
                             )
+                            state = 1
                             break
+
+# hierfür eine bessere lösung überlegen
+                if state == 0:
+                    state_2 = 0    
+                    product = self.ask_input(text=line, problem='What product is that? : ').upper()  # kann ich das über dekorator lösen?
+                    for good in goods:
+                        if product == good.name:
+                            good.add_alt_name(line[0:-4].strip(prc[0]))
+                            state_2 = 1
                     
-                    product = self.ask_input(text=line, problem='What product is that? : ')  # kann ich das über dekorator lösen?
-                    self.add_lookup(data=product.upper(), path=r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt")
-        
+                            item_list.append(
+                                    Item(name=good.name,
+                                        prize=float(prc[0].replace(',', '.'))
+                                    )
+                                )   
+
+                            break
+                    if state_2 == 0:
+                        temp = Good_name(name=product, alt_names=[])
+                        temp.add_alt_name(line[0:-4].strip(prc[0]))
+                        goods.append(temp)
+                    
+                        item_list.append(
+                                    Item(name=temp.name,
+                                        prize=float(prc[0].replace(',', '.'))
+                                    )
+                                )        
         return item_list
 
     def ask_input(self, text, problem):
