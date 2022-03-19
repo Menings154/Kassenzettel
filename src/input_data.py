@@ -4,6 +4,7 @@ import os
 import glob
 import datetime
 import re
+import pickle
 from dataclasses import dataclass
 
 
@@ -57,13 +58,21 @@ class Data_extracter:
                         return shop
             
             answer = self.ask_input(text=self.data, problem='Which shop is this from? : ')
-            self.add_lookup(data=answer.upper(), path=r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\shops.txt")
+            self.add_lookup_name(data=answer.upper(), path=r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\shops.txt")
             return answer
 
     def extract_items(self):
-        """Extract the itmes and the corresponding prices."""
+        """Extract the items and the corresponding prices."""
         item_list=[]
+        goods = []
         price_re = re.compile(r"\d+,\d\d")
+        pickle_files = glob.glob(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods\*.pkl")
+        
+        # load all serialized goods
+        for file in pickle_files:
+            with open(file, 'r') as pkl:
+                goods.append(pkl)
+
         with open(r"C:\Users\Benja\Code\Python\Kassenzettel\Folderstructure\lookup\goods.txt", 'r') as goodsfile:
             goods = goodsfile.readlines()
             for line in self.data:
@@ -89,7 +98,7 @@ class Data_extracter:
         print(text)
         return input(problem)
     
-    def add_lookup(self, data, path):
+    def add_lookup_name(self, data, path):
         """Append the data to the lookup file."""
         with open(path, 'a') as file:
             file.write('\n')
@@ -124,3 +133,21 @@ class Item:
     name: str
     # full_name: str
     prize: float
+
+
+# objekt für einzelnes produkt machen, in dem dann die unterschiedlichen namen, dei auf den einkaufszettel stehen können stehen? 
+@dataclass
+class Good_name:
+
+    name: str
+    alt_names: list
+
+    def add_alt_name(self, alt_name):
+        """Add a description which stand on the receipt and means the same product"""
+        # formating of text (deleting trailing whitespaces)
+        while True:
+            if alt_name[-1] == ' ':
+                alt_name = alt_name[0:-1]
+            else:
+                break
+        self.alt_names.append(alt_name)
